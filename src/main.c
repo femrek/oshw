@@ -122,3 +122,89 @@ void clear_output_file() {
   FILE *file = fopen(output_filename, "w");
   fclose(file);
 }
+
+// Function to assign processes to CPU-1
+void process_fcfs(int *ram_source, int *cpu_source) {
+  // Sort the temporary processes array by arrival time
+  sort_according_to_arrival_time(processes0, num_processes0);
+
+  // Create a copy of the processes array to avoid modifying the original data
+  num_fcfs = num_processes0;
+  memcpy(fcfsResult, processes0, sizeof(Process *) * num_fcfs);
+
+  // Simulate FCFS scheduling
+  FILE *file = fopen(output_filename, "a");
+  if (file == NULL) {
+    printf("Output file could not be opened: %s\n", output_filename);
+    exit(1);
+  }
+  for (int i = 0; i < num_fcfs; i++) {
+    fprintf(file, "\n");
+    Process p = *fcfsResult[i];
+    fprintf(file, "Process P%d is queued to be assigned to CPU-1\n",
+            p.process_number);
+    fprintf(file, "Process P%d is assigned to CPU-1\n", p.process_number);
+    fprintf(file, "Process P%d is completed and terminated\n",
+            p.process_number);
+  }
+  fclose(file);
+}
+
+void process_sjf(int *ram_source, int *cpu_source) {
+  // sort acordding to arrival time
+  sort_according_to_arrival_time(processes1, num_processes1);
+
+  // Create a copy of the processes array to avoid modifying the original data
+  num_sjf = num_processes1;
+  memcpy(sjfResult, processes1, sizeof(Process *) * num_sjf);
+
+  // Implement SJF scheduling
+  int current_time = 0;
+  int completed = 0;
+
+  FILE *file = fopen(output_filename, "a");
+  if (file == NULL) {
+    printf("Output file could not be opened: %s\n", output_filename);
+    exit(1);
+  }
+  while (completed < num_sjf) {
+    // Find the process with the shortest burst time among arrived processes
+    int min_burst_index = -1;
+    int min_burst_time = INT_MAX;
+
+    for (int i = 0; i < num_sjf; i++) {
+      if (sjfResult[i]->arrival_time <= current_time &&
+          sjfResult[i]->burst_time < min_burst_time &&
+          !(sjfResult[i]->burst_time == 0)) {
+        min_burst_index = i;
+        min_burst_time = sjfResult[i]->burst_time;
+        fprintf(file, "\n");
+        Process p = *sjfResult[i];
+        fprintf(file,
+                "Process P%d is placed in the sjfResult queue to be assigned "
+                "to CPU-2.\n",
+                p.process_number);
+      }
+    }
+
+    // If no process is available, move to the next time unit
+    if (min_burst_index == -1) {
+      current_time++;
+      continue;
+    }
+
+    // Process the process with the shortest burst time
+    current_time += sjfResult[min_burst_index]->burst_time;
+    sjfResult[min_burst_index]->burst_time = 0; // Mark as completed
+    completed++;
+
+    // You can add code here to track completion time, waiting time, etc. for
+    // SJF analysis
+    Process p = *sjfResult[min_burst_index];
+    fprintf(file, "Process P%d is assigned to CPU-2.\n", p.process_number);
+    fprintf(file, "The operation of process P%d is completed and terminated.\n",
+            p.process_number);
+  }
+  fprintf(file, "\n");
+  fclose(file);
+}
