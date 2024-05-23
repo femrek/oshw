@@ -208,3 +208,121 @@ void process_sjf(int *ram_source, int *cpu_source) {
   fprintf(file, "\n");
   fclose(file);
 }
+
+void process_rr(int *ram_source, int *cpu_source, int q_time) {
+  // Determine which RR result array to use
+  Process **rrResult;
+  int *num_rr;
+  if (q_time == 8) {
+    sort_according_to_arrival_time(processes2, num_processes2);
+    rrResult = rr8Result;
+    num_rr = &num_rr8;
+    *num_rr = num_processes2;
+    memcpy(rrResult, processes2, sizeof(Process *) * *num_rr);
+  } else if (q_time == 16) {
+    sort_according_to_arrival_time(processes3, num_processes3);
+    rrResult = rr16Result;
+    num_rr = &num_rr16;
+    *num_rr = num_processes3;
+    memcpy(rrResult, processes3, sizeof(Process *) * *num_rr);
+  } else {
+    printf("Unsupported quantum time: %d\n", q_time);
+    exit(1);
+  }
+
+  int current_time = 0;
+  int completed = 0;
+  int *remaining_burst_time = malloc(sizeof(int) * *num_rr);
+  for (int i = 0; i < *num_rr; i++) {
+    remaining_burst_time[i] = rrResult[i]->burst_time;
+  }
+
+  FILE *file = fopen(output_filename, "a");
+  if (file == NULL) {
+    printf("Output file could not be opened: %s\n", output_filename);
+    exit(1);
+  }
+
+  while (completed < *num_rr) {
+    for (int i = 0; i < *num_rr; i++) {
+      if (remaining_burst_time[i] > 0 &&
+          rrResult[i]->arrival_time <= current_time) {
+        Process p = *rrResult[i];
+        fprintf(
+            file,
+            "Process P%d is placed in the rr%dResult queue to be assigned to "
+            "CPU-2.\n",
+            p.process_number, q_time);
+
+        fprintf(file, "Process P%d is assigned to CPU-2.\n", p.process_number);
+        if (remaining_burst_time[i] > q_time) {
+          current_time += q_time;
+          remaining_burst_time[i] -= q_time;
+          fprintf(file,
+                  "Process P%d ran until the defined quantum time and is "
+                  "queued again because the process is not completed.\n",
+                  p.process_number);
+          fprintf(file, "\n");
+        } else {
+          current_time += remaining_burst_time[i];
+          remaining_burst_time[i] = 0;
+          completed++;
+          fprintf(file,
+                  "Process P%d is assigned to CPU-2, its operation is "
+                  "completed and terminated.\n",
+                  p.process_number);
+          fprintf(file, "\n");
+        }
+      } else if (remaining_burst_time[i] > 0 &&
+                 rrResult[i]->arrival_time > current_time) {
+        current_time++;
+        continue;
+      }
+    }
+  }
+
+  fclose(file);
+  free(remaining_burst_time);
+}
+
+// Function to print queues to the screen
+void print_queues() {
+  // CPU-1 que1(priority-0) (FCFS)→P2-P3-P12-P7….
+  //  CPU-2 que2(priority-1) (SJF)→ P1-P5-P4-P16…
+  //  CPU-2 que3(priority-2) (RR-q8)→ P7-P9-P22-P7-P11-P14-P7…
+  //  CPU-2 que4(priority-3) (RR-q16)→P8-P24-P21-P18-P24-P21…
+  printf("CPU-1 fcfsResult(priority-0) (FCFS) \t-> ");
+  for (int i = 0; i < num_fcfs; i++) {
+    printf("P%d - ", fcfsResult[i]->process_number);
+  }
+  printf("\n");
+
+  printf("CPU-2 sjfResult(priority-1) (SJF) \t-> ");
+  for (int i = 0; i < num_sjf; i++) {
+    printf("P%d - ", sjfResult[i]->process_number);
+  }
+  printf("\n");
+
+  printf("CPU-2 rr8Result(priority-2) (RR-q8) \t-> ");
+  for (int i = 0; i < num_rr8; i++) {
+    printf("P%d - ", rr8Result[i]->process_number);
+  }
+  printf("\n");
+
+  printf("CPU-2 rr16Result(priority-3) (RR-q16) \t-> ");
+  for (int i = 0; i < num_rr16; i++) {
+    printf("P%d - ", rr16Result[i]->process_number);
+  }
+  printf("\n");
+}
+
+int cmpfunc(const void *a, const void *b) {
+  Process *p1 = *(Process **)a;
+  Process *p2 = *(Process **)b;
+  int result = p1->arrival_time - p2->arrival_time;
+  return result;
+}
+
+void sort_according_to_arrival_time(Process *array[], int size) {
+  qsort(array, size, sizeof(Process *), cmpfunc);
+}
