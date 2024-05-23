@@ -82,3 +82,43 @@ int main(int argc, char *argv[]) {
 
   return 0;
 }
+
+// Function to read process information from file
+void read_processes() {
+  FILE *file = fopen(input_filename, "r");
+  if (file == NULL) {
+    printf("File could not be opened: %s\n", input_filename);
+    exit(1);
+  }
+
+  while (fscanf(file, "P%d,%d,%d,%d,%d,%d\n",
+                &processes[num_processes].process_number,
+                &processes[num_processes].arrival_time,
+                &processes[num_processes].priority,
+                &processes[num_processes].burst_time,
+                &processes[num_processes].ram_required,
+                &processes[num_processes].cpu_percentage) == 6) {
+    if (processes[num_processes].priority == 0) {
+      processes0[num_processes0] = &processes[num_processes];
+      num_processes0++;
+    } else if (processes[num_processes].priority == 1) {
+      processes1[num_processes1] = &processes[num_processes];
+      num_processes1++;
+    } else if (processes[num_processes].priority == 2) {
+      processes2[num_processes2] = &processes[num_processes];
+      num_processes2++;
+    } else if (processes[num_processes].priority == 3) {
+      processes3[num_processes3] = &processes[num_processes];
+      num_processes3++;
+    }
+
+    num_processes++;
+                }
+
+  fclose(file);
+}
+
+void clear_output_file() {
+  FILE *file = fopen(output_filename, "w");
+  fclose(file);
+}
