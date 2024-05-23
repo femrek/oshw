@@ -50,7 +50,7 @@ void print_queues();
 void sort_according_to_arrival_time(Process *array[], int size);
 
 int main(int argc, char *argv[]) {
-    // Check arguments
+  // Check arguments
   if (argc != 3) {
     printf("Usage: %s <input file> <output file>\n", argv[0]);
     return 1;
@@ -113,12 +113,20 @@ void read_processes() {
     }
 
     num_processes++;
-                }
+  }
 
   fclose(file);
 }
 
 void clear_output_file() {
+  if (output_filename == NULL) {
+    printf("Output file not defined\n");
+    exit(1);
+  } else if (strlen(output_filename) == 0) {
+    printf("Output file not defined\n");
+    exit(1);
+  }
+
   FILE *file = fopen(output_filename, "w");
   fclose(file);
 }
